@@ -1,40 +1,81 @@
+import { useEffect } from "react";
+import { Route, Switch, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppShell } from "@/components/layout/AppShell";
+import { StudioProvider } from "@/data/studio";
+import { LanguageProvider, useI18n } from "@/i18n/LanguageProvider";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
+import RollCall from "@/pages/RollCall";
+import StudentProfile from "@/pages/StudentProfile";
+import Students from "@/pages/Students";
+import Studio from "@/pages/Studio";
+import Timetable from "@/pages/Timetable";
+import Today from "@/pages/Today";
 
-function Router() {
-  // make sure to consider if you need authentication for certain routes
-  return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
-  );
+const TITLES: Record<string, string> = {
+  "/": "meta.today",
+  "/timetable": "meta.timetable",
+  "/students": "meta.students",
+  "/studio": "meta.studio",
+};
+
+function ScrollToTop() {
+  const [location] = useLocation();
+  const { t } = useI18n();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+
+    const path = location.replace(/\/$/, "") || "/";
+    let key = TITLES[path];
+    if (!key && path.startsWith("/students/")) key = "meta.student";
+    if (!key && path.startsWith("/roll-call/")) key = "meta.rollcall";
+    document.title = `${t(key ?? "meta.notfound")} · Little Fawn Art Studio`;
+  }, [location, t]);
+
+  return null;
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
+function Router() {
+  return (
+    <AppShell>
+      <ScrollToTop />
+      <Switch>
+        <Route path="/" component={Today} />
+        <Route path="/timetable" component={Timetable} />
+        <Route path="/students" component={Students} />
+        <Route path="/students/:id" component={StudentProfile} />
+        <Route path="/roll-call/:classId" component={RollCall} />
+        <Route path="/studio" component={Studio} />
+        <Route path="/404" component={NotFound} />
+        <Route component={NotFound} />
+      </Switch>
+    </AppShell>
+  );
+}
 
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
+      <LanguageProvider>
+        <StudioProvider>
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              style: {
+                borderRadius: "16px",
+                border: "2px solid #E8DBC6",
+                background: "#FFFDF8",
+                color: "#3F342B",
+                fontFamily: "inherit",
+                fontWeight: 700,
+              },
+            }}
+          />
           <Router />
-        </TooltipProvider>
-      </ThemeProvider>
+        </StudioProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }

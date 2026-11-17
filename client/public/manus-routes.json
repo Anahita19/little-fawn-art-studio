@@ -1,0 +1,10 @@
+{
+  "routes": [
+    { "path": "/", "title": "Today at the studio" },
+    { "path": "/timetable", "title": "Weekly timetable" },
+    { "path": "/students", "title": "Students" },
+    { "path": "/students/:id", "title": "Student profile" },
+    { "path": "/roll-call/:classId", "title": "Roll call" },
+    { "path": "/studio", "title": "The studio" }
+  ]
+}
