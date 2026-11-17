@@ -186,6 +186,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const { loading, user } = useAuth();
   const studio = useStudio();
+  const [location] = useLocation();
 
   if (loading) {
     return (
@@ -252,7 +253,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <MobileHeader />
       <main className="relative z-10 pb-24 lg:ps-[268px] lg:pb-10">
         <div className="mx-auto w-full max-w-[1340px] px-4 py-5 sm:px-6 lg:px-9 lg:py-8">
-          {children}
+          <div key={location} className="story-page">
+            {children}
+          </div>
         </div>
       </main>
       <MobileNav />

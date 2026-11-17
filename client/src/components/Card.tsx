@@ -12,7 +12,7 @@ interface CardProps {
 
 export function Card({ children, className, alt, tape, tapeRight, lift, style }: CardProps) {
   const classes = [
-    "paper-card",
+    "paper-card story-card",
     alt ? "paper-card-alt" : "",
     tape ? "tape" : "",
     tapeRight ? "tape-right" : "",
