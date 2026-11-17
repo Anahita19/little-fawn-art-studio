@@ -1,12 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useContext, useMemo, useReducer } from "react";
 import type { ReactNode } from "react";
+import { createContext } from "react";
+import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
+import { useI18n } from "@/i18n/LanguageProvider";
 import { createSeedData } from "./seed";
-import type { AttendanceRecord, AttendanceStatus, StudioData } from "@/lib/types";
-import { attendanceKey, PACKAGE_PRICE, PACKAGE_SIZE } from "@/lib/types";
-import { dateKey } from "@/lib/time";
-
-const STORAGE_KEY = "littlefawn:studio:v1";
-const DATA_VERSION = 2;
+import type { AttendanceStatus, StudioData } from "@/lib/types";
 
 type Action =
   | { type: "mark"; classId: string; date: string; studentId: string; status: AttendanceStatus }
@@ -15,157 +14,100 @@ type Action =
   | { type: "renew"; studentId: string }
   | { type: "reset" };
 
-function counts(record: AttendanceRecord | undefined): boolean {
-  return !!record && (record.status === "present" || record.status === "late");
-}
-
-function reducer(state: StudioData, action: Action): StudioData {
-  switch (action.type) {
-    case "mark": {
-      const key = attendanceKey(action.classId, action.date, action.studentId);
-      const previous = state.attendance[key];
-      if (previous && previous.status === action.status) return state;
-      const nextCounts = action.status === "present" || action.status === "late";
-      const delta = (nextCounts ? 1 : 0) - (counts(previous) ? 1 : 0);
-      const attendance: Record<string, AttendanceRecord> = {
-        ...state.attendance,
-        [key]: {
-          classId: action.classId,
-          date: action.date,
-          studentId: action.studentId,
-          status: action.status,
-          markedAt: Date.now(),
-        },
-      };
-      return applyLessonDelta({ ...state, attendance }, new Map([[action.studentId, delta]]));
-    }
-    case "markMany": {
-      const deltas = new Map<string, number>();
-      const attendance = { ...state.attendance };
-      action.studentIds.forEach((studentId) => {
-        const key = attendanceKey(action.classId, action.date, studentId);
-        const previous = attendance[key];
-        if (previous && previous.status === action.status) return;
-        const delta = 1 - (counts(previous) ? 1 : 0);
-        deltas.set(studentId, (deltas.get(studentId) ?? 0) + delta);
-        attendance[key] = {
-          classId: action.classId,
-          date: action.date,
-          studentId,
-          status: action.status,
-          markedAt: Date.now(),
-        };
-      });
-      if (deltas.size === 0) return state;
-      return applyLessonDelta({ ...state, attendance }, deltas);
-    }
-    case "clearClass": {
-      const attendance = { ...state.attendance };
-      const deltas = new Map<string, number>();
-      action.studentIds.forEach((studentId) => {
-        const key = attendanceKey(action.classId, action.date, studentId);
-        const previous = attendance[key];
-        if (!previous) return;
-        if (counts(previous)) deltas.set(studentId, (deltas.get(studentId) ?? 0) - 1);
-        delete attendance[key];
-      });
-      return applyLessonDelta({ ...state, attendance }, deltas);
-    }
-    case "renew": {
-      const students = state.students.map((student) => {
-        if (student.id !== action.studentId) return student;
-        return {
-          ...student,
-          purchased: student.purchased + PACKAGE_SIZE,
-          renewals: [
-            ...student.renewals,
-            { date: dateKey(new Date()), lessons: PACKAGE_SIZE, price: PACKAGE_PRICE },
-          ],
-        };
-      });
-      return { ...state, students };
-    }
-    case "reset":
-      return createSeedData();
-    default:
-      return state;
-  }
-}
-
-function applyLessonDelta(state: StudioData, deltas: Map<string, number>): StudioData {
-  if (deltas.size === 0) return state;
-  const students = state.students.map((student) => {
-    const delta = deltas.get(student.id);
-    if (!delta) return student;
-    const used = Math.min(student.purchased, Math.max(0, student.used + delta));
-    if (used === student.used) return student;
-    return { ...student, used };
-  });
-  return { ...state, students };
-}
-
-function loadState(): StudioData {
-  if (typeof window === "undefined") return createSeedData();
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return createSeedData();
-    const parsed = JSON.parse(raw) as StudioData;
-    if (!parsed || parsed.version !== DATA_VERSION || !Array.isArray(parsed.students)) {
-      return createSeedData();
-    }
-    if (!parsed.attendance) parsed.attendance = {};
-    return parsed;
-  } catch {
-    return createSeedData();
-  }
-}
+type LocalAction = Action | { type: "clearOptimistic" };
 
 interface StudioContextValue {
   data: StudioData;
+  loading: boolean;
+  saving: boolean;
+  error: unknown;
   markAttendance: (classId: string, date: string, studentId: string, status: AttendanceStatus) => void;
   markMany: (classId: string, date: string, studentIds: string[], status: AttendanceStatus) => void;
   clearClass: (classId: string, date: string, studentIds: string[]) => void;
   renewPackage: (studentId: string) => void;
   reset: () => void;
+  retry: () => void;
 }
 
 const StudioContext = createContext<StudioContextValue | null>(null);
 
+function applyLocalAction(state: StudioData | null, action: LocalAction): StudioData | null {
+  if (action.type === "clearOptimistic") return null;
+  if (!state) return state;
+  if (action.type === "reset") return createSeedData();
+  if (action.type === "renew") {
+    return {
+      ...state,
+      students: state.students.map((student) =>
+        student.id === action.studentId
+          ? { ...student, purchased: student.purchased + 20, renewals: [...student.renewals, { date: new Date().toISOString().slice(0, 10), lessons: 20, price: 400 }] }
+          : student,
+      ),
+    };
+  }
+  const next = structuredClone(state);
+  const counts = (status?: AttendanceStatus) => status === "present" || status === "late";
+  const adjust = (studentId: string, delta: number) => {
+    next.students = next.students.map((student) => student.id === studentId ? { ...student, used: Math.min(student.purchased, Math.max(0, student.used + delta)) } : student);
+  };
+  const markOne = (classId: string, date: string, studentId: string, status: AttendanceStatus) => {
+    const key = `${classId}|${date}|${studentId}`;
+    const previous = next.attendance[key];
+    if (previous?.status === status) return;
+    next.attendance[key] = { classId, date, studentId, status, markedAt: Date.now() };
+    adjust(studentId, (counts(status) ? 1 : 0) - (previous && counts(previous.status) ? 1 : 0));
+  };
+  if (action.type === "mark") markOne(action.classId, action.date, action.studentId, action.status);
+  if (action.type === "markMany") action.studentIds.forEach((studentId) => markOne(action.classId, action.date, studentId, action.status));
+  if (action.type === "clearClass") {
+    action.studentIds.forEach((studentId) => {
+      const key = `${action.classId}|${action.date}|${studentId}`;
+      const previous = next.attendance[key];
+      if (previous && counts(previous.status)) adjust(studentId, -1);
+      delete next.attendance[key];
+    });
+  }
+  return next;
+}
+
 export function StudioProvider({ children }: { children: ReactNode }) {
-  const [data, dispatch] = useReducer(reducer, undefined, loadState);
+  const { t } = useI18n();
+  const studioQuery = trpc.studio.bootstrap.useQuery(undefined, { retry: false });
+  const utils = trpc.useUtils();
+  const [optimistic, dispatch] = useReducer(applyLocalAction, null);
+  const sync = (data: StudioData) => { utils.studio.bootstrap.setData(undefined, data); dispatch({ type: "clearOptimistic" }); };
+  const mutation = trpc.studio.markAttendance.useMutation({ onSuccess: sync });
+  const markManyMutation = trpc.studio.markMany.useMutation({ onSuccess: sync });
+  const clearMutation = trpc.studio.clearClass.useMutation({ onSuccess: sync });
+  const renewMutation = trpc.studio.renewPackage.useMutation({ onSuccess: (data) => { sync(data); toast.success(t("common.saved")); } });
+  const resetMutation = trpc.studio.reset.useMutation({ onSuccess: (data) => { sync(data); toast.success(t("common.resetDone")); } });
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch {
-      /* storage may be full or blocked */
-    }
-  }, [data]);
-
-  const markAttendance = useCallback(
-    (classId: string, date: string, studentId: string, status: AttendanceStatus) =>
-      dispatch({ type: "mark", classId, date, studentId, status }),
-    [],
+  const base = studioQuery.data ?? createSeedData();
+  const data = optimistic ?? base;
+  const markAttendance = useCallback((classId: string, date: string, studentId: string, status: AttendanceStatus) => {
+    dispatch({ type: "mark", classId, date, studentId, status });
+    mutation.mutate({ classId, date, studentId, status });
+  }, [mutation]);
+  const markMany = useCallback((classId: string, date: string, studentIds: string[], status: AttendanceStatus) => {
+    dispatch({ type: "markMany", classId, date, studentIds, status });
+    markManyMutation.mutate({ classId, date, studentIds, status });
+  }, [markManyMutation]);
+  const clearClass = useCallback((classId: string, date: string, studentIds: string[]) => {
+    dispatch({ type: "clearClass", classId, date, studentIds });
+    clearMutation.mutate({ classId, date, studentIds });
+  }, [clearMutation]);
+  const renewPackage = useCallback((studentId: string) => {
+    dispatch({ type: "renew", studentId });
+    renewMutation.mutate({ studentId });
+  }, [renewMutation]);
+  const reset = useCallback(() => resetMutation.mutate(), [resetMutation]);
+  const retry = useCallback(() => { void studioQuery.refetch(); }, [studioQuery]);
+  const saving = mutation.isPending || markManyMutation.isPending || clearMutation.isPending || renewMutation.isPending || resetMutation.isPending;
+  return (
+    <StudioContext.Provider value={{ data, loading: studioQuery.isLoading, saving, error: studioQuery.error, markAttendance, markMany, clearClass, renewPackage, reset, retry }}>
+      {children}
+    </StudioContext.Provider>
   );
-  const markMany = useCallback(
-    (classId: string, date: string, studentIds: string[], status: AttendanceStatus) =>
-      dispatch({ type: "markMany", classId, date, studentIds, status }),
-    [],
-  );
-  const clearClass = useCallback(
-    (classId: string, date: string, studentIds: string[]) =>
-      dispatch({ type: "clearClass", classId, date, studentIds }),
-    [],
-  );
-  const renewPackage = useCallback((studentId: string) => dispatch({ type: "renew", studentId }), []);
-  const reset = useCallback(() => dispatch({ type: "reset" }), []);
-
-  const value = useMemo<StudioContextValue>(
-    () => ({ data, markAttendance, markMany, clearClass, renewPackage, reset }),
-    [data, markAttendance, markMany, clearClass, renewPackage, reset],
-  );
-
-  return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>;
 }
 
 export function useStudio(): StudioContextValue {
@@ -176,13 +118,10 @@ export function useStudio(): StudioContextValue {
 
 export function useLookup() {
   const { data } = useStudio();
-  return useMemo(
-    () => ({
-      teacherById: (id: string) => data.teachers.find((t) => t.id === id),
-      roomById: (id: string) => data.rooms.find((r) => r.id === id),
-      classById: (id: string) => data.classes.find((c) => c.id === id),
-      studentById: (id: string) => data.students.find((s) => s.id === id),
-    }),
-    [data],
-  );
+  return useMemo(() => ({
+    teacherById: (id: string) => data.teachers.find((t) => t.id === id),
+    roomById: (id: string) => data.rooms.find((r) => r.id === id),
+    classById: (id: string) => data.classes.find((c) => c.id === id),
+    studentById: (id: string) => data.students.find((s) => s.id === id),
+  }), [data]);
 }

@@ -1,6 +1,8 @@
 import { CalendarDays, Palette, Sun, Users } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { ReactNode } from "react";
+import { startLogin } from "@/const";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { FawnMark, Wordmark } from "@/components/brand/FawnMark";
 import { SparkleDoodle } from "@/components/brand/Doodles";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -54,6 +56,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 function Sidebar() {
   const { t, n } = useI18n();
   const { data } = useStudio();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="fixed inset-block-0 inset-inline-start-0 z-20 hidden w-[268px] flex-col border-e-2 border-dashed border-line bg-[#fbf3e4]/80 px-4 py-5 backdrop-blur-sm lg:flex">
@@ -84,6 +87,20 @@ function Sidebar() {
       </div>
 
       <div className="mt-auto space-y-3">
+        <div className="rounded-[18px] border-2 border-line bg-card px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-line bg-[#DCC9F0]/70 text-[12px] font-extrabold">
+              {(user?.name || user?.email || "L").slice(0, 1).toUpperCase()}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[10px] font-extrabold text-ink">{user?.name || user?.email}</p>
+              <p className="truncate text-[9px] font-semibold text-ink-soft">{user?.role === "admin" ? t("auth.admin") : t("auth.team")}</p>
+            </div>
+            <button type="button" className="text-[9px] font-extrabold text-ink-soft underline decoration-dashed underline-offset-2" onClick={() => void logout()}>
+              {t("auth.signOut")}
+            </button>
+          </div>
+        </div>
         <div className="relative overflow-hidden rounded-[18px] border-2 border-line bg-card p-3">
           <div className="flex items-center justify-between gap-2">
             <div>
@@ -162,6 +179,67 @@ function MobileNav() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
+  const { loading, user } = useAuth();
+  const studio = useStudio();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-5">
+        <div className="card paper-dots w-full max-w-sm p-8 text-center">
+          <FawnMark className="mx-auto h-16 w-16" title={t("app.name")} />
+          <p className="mt-4 font-display text-xl font-extrabold">{t("auth.loading")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center overflow-hidden px-5 py-10">
+        <div className="wash" />
+        <div className="paper-grain" />
+        <div className="card relative z-10 w-full max-w-md overflow-hidden p-7 text-center sm:p-10">
+          <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 border-line bg-[#FBE9CF]">
+            <FawnMark className="h-14 w-14" title={t("app.name")} />
+          </span>
+          <Wordmark className="mx-auto mt-4" />
+          <h1 className="mt-6 font-display text-3xl font-extrabold text-ink">{t("auth.signIn.title")}</h1>
+          <p className="mx-auto mt-3 max-w-sm text-[13px] font-semibold leading-relaxed text-ink-soft">{t("auth.signIn.body")}</p>
+          <button type="button" className="btn btn-primary mt-6 w-full" onClick={() => startLogin()}>
+            {t("auth.signIn.cta")}
+          </button>
+          <p className="mt-3 text-[10px] font-bold text-ink-soft">{t("auth.signIn.note")}</p>
+          <div className="mt-5 flex justify-center"><LanguageToggle /></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (studio.loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-5">
+        <div className="card relative z-10 w-full max-w-sm p-8 text-center">
+          <FawnMark className="mx-auto h-16 w-16" title={t("app.name")} />
+          <p className="mt-4 font-display text-xl font-extrabold">{t("auth.databaseLoading")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (studio.error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-5">
+        <div className="card relative z-10 w-full max-w-sm p-8 text-center">
+          <FawnMark className="mx-auto h-16 w-16" title={t("app.name")} />
+          <p className="mt-4 font-display text-xl font-extrabold">{t("auth.databaseError")}</p>
+          <p className="mt-2 text-[12px] font-semibold leading-relaxed text-ink-soft">{String(studio.error instanceof Error ? studio.error.message : "")}</p>
+          <button type="button" className="btn btn-primary mt-5" onClick={studio.retry}>{t("auth.retry")}</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-x-hidden">
       <div className="wash" />

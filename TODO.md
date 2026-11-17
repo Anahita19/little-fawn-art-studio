@@ -1,11 +1,6 @@
 # Little Fawn Art Studio — ToDo
 
-> Status: complete — all items verified with typecheck, static build and headless browser checks.
-
-## Post-delivery improvements
-- [x] Filter the student roster by teacher.
-- [x] Export the current filtered roster as a UTF-8 BOM CSV for Excel and Persian text.
-
+> Status: database-backed authentication work in progress; the original studio manager is complete and verified.
 
 ## Bilingual shell with Persian RTL
 - [x] Every screen available in English and Persian (فارسی), switchable at any time, with the choice remembered across visits.
@@ -53,6 +48,7 @@
 - [x] Student card shows avatar, name, class chips, package progress and thumbnails of the latest artwork.
 - [x] Student profile shows full package status, attendance history and an artwork gallery with titles and dates.
 - [x] Roster supports search in both languages plus filters by class, teacher and package state.
+- [x] Roster exports the current filtered results as an Excel-friendly UTF-8 CSV.
 
 ## Preloaded studio data
 - [x] 5 teachers, 3 classrooms, ~120 students, lesson packages, artwork and a full weekly timetable are preloaded and browsable.
@@ -60,6 +56,15 @@
 - [x] Studio page summarises teachers, classrooms and the 20-lesson/$400 package.
 - [x] Demo data can be reset to its original state.
 
+## Database and login
+- [x] Enable the managed Server and MySQL-compatible Database capabilities for the project.
+- [x] Persist the studio's seeded students, classes, teachers, rooms, attendance, artworks and renewals in a durable database row without overwriting later edits.
+- [x] Keep attendance and renewal mutations server-side and durable across browsers and devices.
+- [x] Use the existing Manus OAuth flow with the `webdev_app_session` cookie and protect the studio UI behind the authenticated user state.
+- [x] Show the signed-in user's name, email and role with a bilingual sign-out action; show a bilingual login gate when logged out.
+- [x] Apply the Drizzle schema/migration, run the server-backed build, and verify unauthenticated protection and production build.
+
 ## Delivery
 - [x] Route manifest served at /manus-routes.json and kept in sync with the router.
-- [x] Production static build succeeds; checkpoint pushed to origin/main.
+- [x] Production static build succeeded before the backend migration.
+- [ ] Push the server-backed checkpoint to the managed project remote and the connected GitHub repository.

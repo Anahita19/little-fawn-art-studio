@@ -32,16 +32,18 @@ Persian, and flips the whole document to RTL. The choice is stored in `localStor
 - React 19 + TypeScript + Vite
 - Tailwind CSS v4 with a custom crayon design system in `client/src/index.css`
 - Wouter for routing, lucide-react for icons, sonner for toasts
-- No backend: state lives in `localStorage` under `littlefawn:studio:v1`, seeded from
-  `client/src/data/seed.ts`
+- The studio snapshot is persisted in the managed MySQL `studio_state` table;
+  attendance, renewals and resets are server-side protected tRPC mutations.
+- Login: Manus OAuth with the preview-compatible `webdev_app_session` cookie. The first
+  owner account is an admin; the Studio reset action is admin-only.
 
 ## Commands
 
 ```bash
 pnpm install
-pnpm dev:static      # development server
+pnpm dev             # database-backed development server
 pnpm check           # typecheck
-pnpm build:static    # static build into dist/public
+pnpm build           # server + client production build
 ```
 
 ## Layout

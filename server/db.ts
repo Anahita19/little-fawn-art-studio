@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, studioState, users } from "../drizzle/schema";
+import type { StudioData } from "../client/src/lib/types";
+import { createSeedData } from "../client/src/data/seed";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -88,4 +90,33 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getStudioState() {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const result = await db.select().from(studioState).where(eq(studioState.id, 1)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function ensureStudioState() {
+  const existing = await getStudioState();
+  if (existing) return existing;
+
+  const seed = createSeedData();
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  try {
+    await db.insert(studioState).values({ id: 1, version: seed.version, data: seed });
+  } catch (error) {
+    const afterRace = await getStudioState();
+    if (afterRace) return afterRace;
+    throw error;
+  }
+  return getStudioState();
+}
+
+export async function saveStudioState(data: StudioData) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.update(studioState).set({ version: data.version, data }).where(eq(studioState.id, 1));
+  return getStudioState();
+}

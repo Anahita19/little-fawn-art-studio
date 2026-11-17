@@ -1,4 +1,5 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import type { StudioData } from "../client/src/lib/types";
 
 /**
  * Core user table backing auth flow.
@@ -25,4 +26,17 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * The studio is a single workspace, so its current domain snapshot lives in one
+ * durable JSON row. The server is the only writer; the browser never persists
+ * operational records locally.
+ */
+export const studioState = mysqlTable("studio_state", {
+  id: int("id").primaryKey(),
+  version: int("version").notNull().default(1),
+  data: json("data").$type<StudioData>().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudioState = typeof studioState.$inferSelect;

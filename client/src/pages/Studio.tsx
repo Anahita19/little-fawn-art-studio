@@ -7,6 +7,7 @@ import { AnimalAvatar } from "@/components/avatar/AnimalAvatar";
 import { HeartDoodle, SparkleDoodle } from "@/components/brand/Doodles";
 import { Illustration } from "@/components/Illustration";
 import { useStudio } from "@/data/studio";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useI18n } from "@/i18n/LanguageProvider";
 import { softTint } from "@/lib/palette";
 import { findConflicts, roomStats, teacherStats } from "@/lib/selectors";
@@ -15,6 +16,7 @@ import { PACKAGE_PRICE, PACKAGE_SIZE } from "@/lib/types";
 export default function Studio() {
   const { t, tr, n, lang } = useI18n();
   const { data, reset } = useStudio();
+  const { user } = useAuth();
   const [confirmReset, setConfirmReset] = useState(false);
 
   const conflicts = useMemo(() => findConflicts(data.classes), [data.classes]);
@@ -218,7 +220,7 @@ export default function Studio() {
             )}
           </Card>
 
-          <Card className="p-4">
+          {user?.role === "admin" && <Card className="p-4">
             <div className="flex items-start gap-2">
               <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-line bg-paper-deep">
                 <RotateCcw size={13} strokeWidth={2.8} />
@@ -250,7 +252,7 @@ export default function Studio() {
                 {t("common.reset")}
               </button>
             )}
-          </Card>
+          </Card>}
 
           <p className="text-center text-[9.5px] font-bold text-ink-soft/70">
             {lang === "fa" ? "ساخته‌شده با مدادرنگی و کمی چسب" : "Made with crayons and a little glue"}
