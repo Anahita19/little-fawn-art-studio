@@ -67,7 +67,7 @@
 ## Delivery
 - [x] Route manifest served at /manus-routes.json and kept in sync with the router.
 - [x] Production static build succeeded before the backend migration.
-- [ ] Push the server-backed checkpoint to the managed project remote and the connected GitHub repository.
+- [x] Push the server-backed checkpoint to the managed project remote and the connected GitHub repository.
 
 ## User access and teacher permissions
 - [x] Add the `teacher` role and nullable teacher-profile assignment to authenticated users.
