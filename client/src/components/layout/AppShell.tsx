@@ -1,4 +1,4 @@
-import { CalendarDays, Palette, Sun, Users } from "lucide-react";
+import { CalendarDays, Palette, Sun, UserCog, Users } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { ReactNode } from "react";
 import { startLogin } from "@/const";
@@ -15,6 +15,7 @@ const NAV = [
   { path: "/timetable", key: "nav.timetable", icon: CalendarDays, tint: "#BCD9EF" },
   { path: "/students", key: "nav.students", icon: Users, tint: "#F7C2CE" },
   { path: "/studio", key: "nav.studio", icon: Palette, tint: "#C4E4C0" },
+  { path: "/users", key: "nav.users", icon: UserCog, tint: "#DCC9F0", adminOnly: true },
 ];
 
 function useActive(path: string) {
@@ -25,9 +26,10 @@ function useActive(path: string) {
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n();
+  const { user } = useAuth();
   return (
     <nav className="flex flex-col gap-1">
-      {NAV.map((item) => {
+      {NAV.filter((item) => !item.adminOnly || user?.role === "admin").map((item) => {
         const active = useActive(item.path);
         const Icon = item.icon;
         return (
@@ -94,7 +96,7 @@ function Sidebar() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[10px] font-extrabold text-ink">{user?.name || user?.email}</p>
-              <p className="truncate text-[9px] font-semibold text-ink-soft">{user?.role === "admin" ? t("auth.admin") : t("auth.team")}</p>
+              <p className="truncate text-[9px] font-semibold text-ink-soft">{user?.role === "admin" ? t("auth.admin") : user?.role === "teacher" ? t("auth.teacher") : t("auth.team")}</p>
             </div>
             <button type="button" className="text-[9px] font-extrabold text-ink-soft underline decoration-dashed underline-offset-2" onClick={() => void logout()}>
               {t("auth.signOut")}
@@ -145,10 +147,12 @@ function MobileHeader() {
 
 function MobileNav() {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const visibleNav = NAV.filter((item) => !item.adminOnly || user?.role === "admin");
   return (
     <nav className="fixed inset-inline-0 bottom-0 z-30 border-t-2 border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
-      <ul className="grid grid-cols-4">
-        {NAV.map((item) => {
+      <ul className={`grid ${visibleNav.length === 5 ? "grid-cols-5" : "grid-cols-4"}`}>
+        {visibleNav.map((item) => {
           const active = useActive(item.path);
           const Icon = item.icon;
           return (

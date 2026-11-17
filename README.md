@@ -36,6 +36,10 @@ Persian, and flips the whole document to RTL. The choice is stored in `localStor
   attendance, renewals and resets are server-side protected tRPC mutations.
 - Login: Manus OAuth with the preview-compatible `webdev_app_session` cookie. The first
   owner account is an admin; the Studio reset action is admin-only.
+- User access: admins can open `/users`, assign `Read only`, `Teacher` or `Administrator`
+  access, and link teacher accounts to one of the five teacher profiles. Teacher accounts
+  can record attendance only for their linked classes; package renewals and demo reset remain
+  administrator-only.
 
 ## Commands
 

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, studioState, users } from "../drizzle/schema";
 import type { StudioData } from "../client/src/lib/types";
@@ -88,6 +88,31 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function listUsers() {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  return db.select().from(users).orderBy(users.createdAt);
+}
+
+export async function countOtherAdmins(openId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const result = await db.select({ id: users.id }).from(users)
+    .where(and(eq(users.role, "admin"), ne(users.openId, openId)));
+  return result.length;
+}
+
+export async function updateUserAccess(
+  id: number,
+  access: { role: "user" | "teacher" | "admin"; teacherId: string | null },
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.update(users).set(access).where(eq(users.id, id));
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result[0] ?? null;
 }
 
 export async function getStudioState() {

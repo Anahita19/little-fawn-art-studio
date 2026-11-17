@@ -68,3 +68,10 @@
 - [x] Route manifest served at /manus-routes.json and kept in sync with the router.
 - [x] Production static build succeeded before the backend migration.
 - [ ] Push the server-backed checkpoint to the managed project remote and the connected GitHub repository.
+
+## User access and teacher permissions
+- [x] Add the `teacher` role and nullable teacher-profile assignment to authenticated users.
+- [x] Add an admin-only bilingual `/users` panel for assigning read-only, teacher and administrator access.
+- [x] Prevent removing the last administrator and prevent an administrator from removing their own access.
+- [x] Enforce teacher attendance mutations server-side so a teacher can only mark attendance for their linked classes.
+- [x] Keep package renewal, demo reset and access management administrator-only.

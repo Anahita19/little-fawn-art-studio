@@ -12,12 +12,14 @@ import Students from "@/pages/Students";
 import Studio from "@/pages/Studio";
 import Timetable from "@/pages/Timetable";
 import Today from "@/pages/Today";
+import Users from "@/pages/Users";
 
 const TITLES: Record<string, string> = {
   "/": "meta.today",
   "/timetable": "meta.timetable",
   "/students": "meta.students",
   "/studio": "meta.studio",
+  "/users": "meta.users",
 };
 
 function ScrollToTop() {
@@ -48,6 +50,7 @@ function Router() {
         <Route path="/students/:id" component={StudentProfile} />
         <Route path="/roll-call/:classId" component={RollCall} />
         <Route path="/studio" component={Studio} />
+        <Route path="/users" component={Users} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
