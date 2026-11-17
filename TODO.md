@@ -2,6 +2,10 @@
 
 > Status: complete — all items verified with typecheck, static build and headless browser checks.
 
+## Post-delivery improvements
+- [x] Filter the student roster by teacher.
+- [x] Export the current filtered roster as a UTF-8 BOM CSV for Excel and Persian text.
+
 
 ## Bilingual shell with Persian RTL
 - [x] Every screen available in English and Persian (فارسی), switchable at any time, with the choice remembered across visits.

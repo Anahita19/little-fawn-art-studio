@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, Search, SlidersHorizontal, Users } from "lucide-react";
+import { ArrowRight, Download, Search, SlidersHorizontal, Users } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
@@ -112,6 +112,7 @@ export default function Students() {
       : "all",
   );
   const [classFilter, setClassFilter] = useState("all");
+  const [teacherFilter, setTeacherFilter] = useState("all");
   const [sortMode, setSortMode] = useState<"name" | "remaining" | "age">("name");
 
   const results = useMemo(() => {
@@ -126,6 +127,11 @@ export default function Students() {
       )
         return false;
       if (classFilter !== "all" && !student.classIds.includes(classFilter)) return false;
+      if (
+        teacherFilter !== "all" &&
+        !student.classIds.some((id) => data.classes.find((cls) => cls.id === id)?.teacherId === teacherFilter)
+      )
+        return false;
       if (!q) return true;
       const haystack = [
         student.name.en,
@@ -143,7 +149,24 @@ export default function Students() {
       return haystack.includes(q);
     });
     return sortStudents(filtered, sortMode, lang);
-  }, [data.students, data.classes, query, packageFilter, classFilter, sortMode, lang]);
+  }, [data.students, data.classes, query, packageFilter, classFilter, teacherFilter, sortMode, lang]);
+
+  const exportCsv = () => {
+    const escape = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
+    const headers = [t("common.student"), t("common.age"), t("students.export.guardian"), t("students.export.phone"), t("students.filter.class"), t("common.teacher"), t("common.remaining"), t("students.filter.status")];
+    const rows = results.map((student) => {
+      const classes = student.classIds.map((id) => data.classes.find((cls) => cls.id === id)).filter(Boolean);
+      const teachers = [...new Set(classes.map((cls) => data.teachers.find((teacher) => teacher.id === cls!.teacherId)).filter(Boolean).map((teacher) => tr(teacher!.name)))];
+      return [tr(student.name), n(student.age), tr(student.guardian), student.phone, classes.map((cls) => tr(cls!.name)).join(" / "), teachers.join(" / "), n(remainingLessons(student)), t(STATE_STYLE[packageState(remainingLessons(student))].key)].map(escape).join(",");
+    });
+    const csv = `\uFEFF${[headers.map(escape).join(","), ...rows].join("\n")}`;
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `little-fawn-students-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div>
@@ -155,10 +178,16 @@ export default function Students() {
           classes: n(data.classes.length),
         })}
         actions={
-          <span className="sticker text-[11px]">
-            <Users size={13} strokeWidth={2.8} />
-            {t("students.resultCount", { n: n(results.length) })}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={exportCsv} title={t("students.export")}>
+              <Download size={13} strokeWidth={2.8} />
+              <span className="hidden sm:inline">{t("students.export")}</span>
+            </button>
+            <span className="sticker text-[11px]">
+              <Users size={13} strokeWidth={2.8} />
+              {t("students.resultCount", { n: n(results.length) })}
+            </span>
+          </div>
         }
       />
 
@@ -222,6 +251,18 @@ export default function Students() {
           </div>
 
           <div>
+            <label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-ink-soft">
+              {t("common.teacher")}
+            </label>
+            <select value={teacherFilter} onChange={(e) => setTeacherFilter(e.target.value)} className="field field-select">
+              <option value="all">{t("common.allTeachers")}</option>
+              {data.teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>{tr(teacher.name)}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="mb-1 flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-ink-soft">
               <SlidersHorizontal size={10} strokeWidth={3} />
               {t("students.sort.name")}
@@ -242,7 +283,7 @@ export default function Students() {
       {results.length === 0 ? (
         <Card className="p-10 text-center">
           <p className="font-display text-lg font-extrabold">{t("students.empty")}</p>
-          <Link href="/students" onClick={() => { setQuery(""); setPackageFilter("all"); setClassFilter("all"); }} className="btn btn-ghost btn-sm mt-3">
+            <Link href="/students" onClick={() => { setQuery(""); setPackageFilter("all"); setClassFilter("all"); setTeacherFilter("all"); }} className="btn btn-ghost btn-sm mt-3">
             {t("timetable.clearFilters")}
           </Link>
         </Card>

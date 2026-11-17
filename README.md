@@ -9,7 +9,7 @@ A picture-book studio manager for a children's art studio: 5 teachers, 3 classro
 | --- | --- | --- |
 | Today | `/` | Timeline of today's classes with live status, roll-call progress, clash alert and a renewal nudge list. Falls back to the next open day when the studio is closed. |
 | Timetable | `/timetable` | Weekly grid, Saturday–Thursday, one colour per class. Overlapping classes get a dashed warning border and a repeating shake. Filter by teacher or classroom. |
-| Students | `/students` | 120 seeded students, searchable by name, guardian, phone or class; filter by package state. |
+| Students | `/students` | 120 seeded students, searchable by name, guardian, phone or class; filter by package state, class or teacher; export the current filtered roster as a Persian-safe CSV. |
 | Student profile | `/students/:id` | Avatar, guardian details, package meter, artwork gallery with lightbox, recent attendance, class list and a teacher's note. |
 | Roll call | `/roll-call/:classId` | Present / late / absent stamps. Marking a child present deducts one lesson from their package immediately. |
 | Studio | `/studio` | Teachers, classrooms, the 20-lesson package and demo reset. |
