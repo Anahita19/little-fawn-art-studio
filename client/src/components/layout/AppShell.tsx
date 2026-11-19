@@ -1,4 +1,4 @@
-import { CalendarDays, Palette, Sun, UserCog, Users } from "lucide-react";
+import { BarChart3, CalendarDays, Palette, Sun, UserCog, Users } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { ReactNode } from "react";
 import { startLogin } from "@/const";
@@ -14,6 +14,7 @@ const NAV = [
   { path: "/", key: "nav.today", icon: Sun, tint: "#FBE3AE" },
   { path: "/timetable", key: "nav.timetable", icon: CalendarDays, tint: "#BCD9EF" },
   { path: "/students", key: "nav.students", icon: Users, tint: "#F7C2CE" },
+  { path: "/reports", key: "nav.reports", icon: BarChart3, tint: "#DCC9F0" },
   { path: "/studio", key: "nav.studio", icon: Palette, tint: "#C4E4C0" },
   { path: "/users", key: "nav.users", icon: UserCog, tint: "#DCC9F0", adminOnly: true },
 ];
@@ -151,7 +152,7 @@ function MobileNav() {
   const visibleNav = NAV.filter((item) => !item.adminOnly || user?.role === "admin");
   return (
     <nav className="fixed inset-inline-0 bottom-0 z-30 border-t-2 border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
-      <ul className={`grid ${visibleNav.length === 5 ? "grid-cols-5" : "grid-cols-4"}`}>
+      <ul className={`grid ${visibleNav.length >= 6 ? "grid-cols-6" : visibleNav.length === 5 ? "grid-cols-5" : "grid-cols-4"}`}>
         {visibleNav.map((item) => {
           const active = useActive(item.path);
           const Icon = item.icon;

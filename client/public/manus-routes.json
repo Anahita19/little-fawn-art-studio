@@ -4,6 +4,8 @@
     { "path": "/timetable", "title": "Weekly timetable" },
     { "path": "/students", "title": "Students" },
     { "path": "/students/:id", "title": "Student profile" },
+    { "path": "/reports", "title": "Studio reports" },
+    { "path": "/users", "title": "User access" },
     { "path": "/roll-call/:classId", "title": "Roll call" },
     { "path": "/studio", "title": "The studio" }
   ]

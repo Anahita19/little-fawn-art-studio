@@ -75,3 +75,8 @@
 - [x] Prevent removing the last administrator and prevent an administrator from removing their own access.
 - [x] Enforce teacher attendance mutations server-side so a teacher can only mark attendance for their linked classes.
 - [x] Keep package renewal, demo reset and access management administrator-only.
+
+## Reports and studio pulse
+- [x] Add a bilingual reports workspace using live studio data for package value, recorded renewals, remaining lessons and attendance marks.
+- [x] Show package health, attendance rhythm, teacher workload, room usage and latest attendance activity in responsive picture-book cards.
+- [x] Add the reports route to desktop/mobile navigation, document titles and the published route manifest.
