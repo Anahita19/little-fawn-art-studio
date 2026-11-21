@@ -14,6 +14,7 @@ import Timetable from "@/pages/Timetable";
 import Today from "@/pages/Today";
 import Users from "@/pages/Users";
 import Reports from "@/pages/Reports";
+import Guide from "@/pages/Guide";
 
 const TITLES: Record<string, string> = {
   "/": "meta.today",
@@ -22,6 +23,7 @@ const TITLES: Record<string, string> = {
   "/studio": "meta.studio",
   "/users": "meta.users",
   "/reports": "meta.reports",
+  "/guide": "meta.guide",
 };
 
 function ScrollToTop() {
@@ -51,6 +53,7 @@ function Router() {
         <Route path="/students" component={Students} />
         <Route path="/students/:id" component={StudentProfile} />
         <Route path="/reports" component={Reports} />
+        <Route path="/guide" component={Guide} />
         <Route path="/roll-call/:classId" component={RollCall} />
         <Route path="/studio" component={Studio} />
         <Route path="/users" component={Users} />

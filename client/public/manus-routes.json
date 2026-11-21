@@ -5,6 +5,7 @@
     { "path": "/students", "title": "Students" },
     { "path": "/students/:id", "title": "Student profile" },
     { "path": "/reports", "title": "Studio reports" },
+    { "path": "/guide", "title": "Studio guide" },
     { "path": "/users", "title": "User access" },
     { "path": "/roll-call/:classId", "title": "Roll call" },
     { "path": "/studio", "title": "The studio" }

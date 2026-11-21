@@ -15,6 +15,7 @@ Little Fawn is a picture-book-style studio management system for a children's ar
 | Student profile | `/students/:id` | Avatar, guardian details, phone, package balance, class enrolments, attendance history and artwork gallery with lightbox. |
 | Roll call | `/roll-call/:classId` | Mark students present, late or absent; mark all; finish a class; package lessons are deducted exactly once for present/late. |
 | Reports | `/reports` | Live studio pulse: package value, renewals, attendance rhythm, package health, teacher workload, room usage and latest attendance activity. |
+| Guide | `/guide` | A bilingual feature tour and handbook covering the new reports, roles, package rules, attendance workflow and storybook motion. |
 | Studio | `/studio` | Teachers, rooms, weekly rhythm and the 20-lesson package definition. Demo reset is admin-only. |
 | User access | `/users` | Admin-only account management for Read only, Teacher and Administrator roles, with teacher-profile linking. |
 
@@ -102,7 +103,7 @@ client/src/
   i18n/                  English/Persian dictionary and RTL provider
   lib/                   types, palette, time helpers and selectors
   pages/                 Today, Timetable, Students, Profile, RollCall,
-                         Reports, Studio, Users and NotFound
+                         Reports, Guide, Studio, Users and NotFound
 server/
   _core/                 server entry, OAuth/session SDK and tRPC context
   db.ts                  managed database helper
